@@ -1,6 +1,5 @@
-package com.example.volleypicassorecycler;
+package com.example.volleypicassorecycler.Adapter;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +9,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.volleypicassorecycler.Data.ImagesModel;
+import com.example.volleypicassorecycler.R;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ public class PixabayRecyclerAdapter extends RecyclerView.Adapter<PixabayRecycler
 
     public interface onItemClickListener {
         void onItemClick(int pos);
+        void onItemLongClick(int pos);
     }
 
     private ArrayList<ImagesModel> info;
@@ -96,6 +98,18 @@ public class PixabayRecyclerAdapter extends RecyclerView.Adapter<PixabayRecycler
                         if(getAdapterPosition() != RecyclerView.NO_POSITION)
                             listener.onItemClick(getAdapterPosition());
                     }
+                }
+            });
+
+            itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    if(listener  != null)
+                    {
+                        if(getAdapterPosition() != RecyclerView.NO_POSITION)
+                            listener.onItemLongClick(getAdapterPosition());
+                    }
+                    return true;
                 }
             });
         }
