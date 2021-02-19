@@ -56,6 +56,8 @@ public class MainActivity extends AppCompatActivity implements PixabayRecyclerAd
         searchBtn = findViewById(R.id.btnSearch);
         editTextKeyword = findViewById(R.id.searchTxt);
 
+        mainData();
+
         searchBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -96,6 +98,19 @@ public class MainActivity extends AppCompatActivity implements PixabayRecyclerAd
     public void onItemLongClick(int pos) {
         data.remove(pos);
         adapter.notifyItemRemoved(pos);
+    }
+
+    private void mainData()
+    {
+        progressBar.setVisibility(View.VISIBLE);
+        data.clear();
+        data = api.getData("https://pixabay.com/api/?key=19999666-dcd12856d7a383c52280a0783");
+        adapter = new PixabayRecyclerAdapter();
+        adapter.setInfoList(data);
+        recyclerView.setAdapter(adapter);
+        adapter.setOnItemClickListener(MainActivity.this);
+        progressBar.setVisibility(View.INVISIBLE);
+
     }
 
     /*private void loadApiData(String Url) {
