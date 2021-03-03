@@ -1,6 +1,7 @@
 package com.example.volleypicassorecycler.Data;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -77,6 +78,7 @@ public class API {
         });
         request.setTag(MainActivity.TAG);
         API.getInstance(ctx.getApplicationContext()).getRequestQueue().add(request);
+        Log.v("Api" , data.size() + " ");
         return data;
     }
 

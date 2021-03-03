@@ -3,6 +3,7 @@ package com.example.volleypicassorecycler.UI;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -27,7 +28,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements PixabayRecyclerAdapter.onItemClickListener {
+public class MainActivity extends AppCompatActivity implements PixabayRecyclerAdapter.onItemClickListener, ViewPresenter, View.OnClickListener {
 
     public static final String TAG = "MainActivity";
     private String url = "https://pixabay.com/api/?key=19999666-dcd12856d7a383c52280a0783&q=";
@@ -38,6 +39,7 @@ public class MainActivity extends AppCompatActivity implements PixabayRecyclerAd
     private ProgressBar progressBar;
     private Button searchBtn;
     private EditText editTextKeyword;
+    private Presenter presenter;
     private API api;
 
     @Override
@@ -45,10 +47,9 @@ public class MainActivity extends AppCompatActivity implements PixabayRecyclerAd
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        progressBar = findViewById(R.id.progressBar);
-        progressBar.setVisibility(View.INVISIBLE);
-
         api = new API(getApplicationContext());
+
+        progressBar = findViewById(R.id.progressBar);
 
         data = new ArrayList<>();
         recyclerView = findViewById(R.id.recycler_view);
@@ -56,31 +57,11 @@ public class MainActivity extends AppCompatActivity implements PixabayRecyclerAd
         searchBtn = findViewById(R.id.btnSearch);
         editTextKeyword = findViewById(R.id.searchTxt);
 
+        presenter = new Presenter(this::onGetDataFromApi, getApplicationContext());
+
         mainData();
 
-        searchBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                query = editTextKeyword.getText().toString();
-                if(query.isEmpty() || query == null)
-                    Toast.makeText(MainActivity.this, "Empty KeyWord", Toast.LENGTH_SHORT).show();
-                else{
-                    StringBuilder finalURl = new StringBuilder();
-                    finalURl.append(url).append(query);
-                    data.clear();
-
-                    progressBar.setVisibility(View.VISIBLE);
-                    data = api.getData(finalURl.toString());
-                    adapter = new PixabayRecyclerAdapter();
-                    adapter.setInfoList(data);
-                    recyclerView.setAdapter(adapter);
-                    adapter.setOnItemClickListener(MainActivity.this);
-                    progressBar.setVisibility(View.INVISIBLE);
-                }
-
-            }
-        });
-
+        searchBtn.setOnClickListener(this);
     }
 
     @Override
@@ -100,22 +81,57 @@ public class MainActivity extends AppCompatActivity implements PixabayRecyclerAd
         adapter.notifyItemRemoved(pos);
     }
 
-    private void mainData()
-    {
+    private void mainData() {
         progressBar.setVisibility(View.VISIBLE);
-        data.clear();
-        data = api.getData("https://pixabay.com/api/?key=19999666-dcd12856d7a383c52280a0783");
-        adapter = new PixabayRecyclerAdapter();
-        adapter.setInfoList(data);
-        recyclerView.setAdapter(adapter);
-        adapter.setOnItemClickListener(MainActivity.this);
+        presenter.getDataFrom("https://pixabay.com/api/?key=19999666-dcd12856d7a383c52280a0783");
         progressBar.setVisibility(View.INVISIBLE);
 
     }
 
-    /*private void loadApiData(String Url) {
-        progressBar.setVisibility(View.VISIBLE);
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (API.getInstance(this.getApplicationContext()).getRequestQueue() != null) {
+            API.getInstance(this.getApplicationContext()).getRequestQueue().cancelAll(TAG);
+        }
+
+    }
+
+    @Override
+    public void onGetDataFromApi(ArrayList<ImagesModel> models) {
+        //TODO after getting data
         data.clear();
+        data.addAll(models);
+        Log.v(TAG , data.size() + " " + models.size());
+        adapter = new PixabayRecyclerAdapter();
+        adapter.setInfoList(data);
+        recyclerView.setAdapter(adapter);
+        adapter.setOnItemClickListener(MainActivity.this);
+
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.btnSearch:
+
+                query = editTextKeyword.getText().toString().trim();
+                if (query.isEmpty() || query == null)
+                    Toast.makeText(MainActivity.this, "Empty KeyWord", Toast.LENGTH_SHORT).show();
+                else {
+                    progressBar.setVisibility(View.VISIBLE);
+                    StringBuilder finalURl = new StringBuilder();
+                    finalURl.append(url).append(query);
+                    presenter.getDataFrom(finalURl.toString());
+                    progressBar.setVisibility(View.INVISIBLE);
+                }
+                break;
+        }
+    }
+
+    public ArrayList<ImagesModel> getDdata(String Url)
+    {
+        ArrayList<ImagesModel> data = new ArrayList<>();
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, Url, null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
@@ -135,35 +151,19 @@ public class MainActivity extends AppCompatActivity implements PixabayRecyclerAd
                         data.add(new ImagesModel(likes, views, fav, imgUrl, UserName, UserImageUrl, pageUrl));
                     }
 
-
-                    progressBar.setVisibility(View.INVISIBLE);
-                    adapter = new PixabayRecyclerAdapter();
-                    adapter.setInfoList(data);
-                    recyclerView.setAdapter(adapter);
-                    adapter.setOnItemClickListener(MainActivity.this);
                 } catch (JSONException e) {
                     e.printStackTrace();
-                    progressBar.setVisibility(View.INVISIBLE);
                 }
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Toast.makeText(MainActivity.this, error.getMessage(), Toast.LENGTH_LONG).show();
-                progressBar.setVisibility(View.INVISIBLE);
+                Toast.makeText(getApplicationContext(), error.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
-        request.setTag(TAG);
-        API.getInstance(this.getApplicationContext()).getRequestQueue().add(request);
-
-    }*/
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        if (API.getInstance(this.getApplicationContext()).getRequestQueue() != null) {
-            API.getInstance(this.getApplicationContext()).getRequestQueue().cancelAll(TAG);
-        }
-
+        request.setTag(MainActivity.TAG);
+        API.getInstance(getApplicationContext()).getRequestQueue().add(request);
+        Log.v("Api" , data.size() + " ");
+        return data;
     }
 }

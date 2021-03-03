@@ -36,6 +36,7 @@ public class PixabayRecyclerAdapter extends RecyclerView.Adapter<PixabayRecycler
 
     public void setInfoList(ArrayList<ImagesModel> info) {
         this.info = info;
+        notifyDataSetChanged();
     }
 
     @NonNull
